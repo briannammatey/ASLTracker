@@ -52,7 +52,7 @@ The goal of this project is to build an accessible tool that leverages **OpenCV*
 
 ---
 
-## 🚧 To Do
+
 ---
 
 ## 🤝 Contributions
