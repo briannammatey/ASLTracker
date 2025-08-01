@@ -42,7 +42,11 @@ The goal of this project is to build an accessible tool that leverages **OpenCV*
 - UI development is in early stages  
 
 ---
-
+## To Do 
+- Train and improve model
+- Improve Dataset
+- Finalize UI
+---
 ## 📌 Goals
 
 - Increase accessibility to ASL learning through intuitive tech  
