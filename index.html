@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASL Hand Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mediapipe/0.10.0/hands.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mediapipe/0.10.0/camera_utils.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mediapipe/0.10.0/control_utils.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mediapipe/0.10.0/drawing_utils.min.js"></script>
+    <link rel = "stylesheet" href="style.css">
+
+</head>
+
+<body>
+    <!--containeer is a box that wraps or holds content-->
+<div class ="container">
+    <header>
+    <h1>Personalize ASL Hand Tracker</h1>
+    <p> Real-time American Sign Language Tracker</p>
+    </header>
+    <main class = "main-content" >
+        <section class = "video-section">
+        <div class = "video-container">
+            <video id = 'videoFeed' width = "640" height = "480">
+                <p>Your browser doesn't support video.</p>
+            </video>
+        </div>
+   
+    <!--Making the buttons -->
+    <div class = "controls">
+        <button id = "startBtn">Start Camera</button>
+        <button id = "stopBtn">Stop Camera</button>
+    </div>
+</section>
+<section class = "results-selection">
+
+        <h2>Detection results</h2>
+        <div class = "current-sign">
+            <h3>Current Sign:</h3>
+                <p id= "signDisplay" >No sign detected></p>
+                <p id="confidence">Confidence: 0%</p>
+         </div>
+    </section>   
+    </main>
+    </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
