@@ -27,7 +27,7 @@ for label in os.listdir(base_path):
         img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)  
         if img is None:
             continue
-        img = cv2.resize(img, (64, 64))  #
+        img = cv2.resize(img, (300, 300))  #
         images.append(img)
         # 123
         labels.append(ord(label.upper()) - ord('A')) 
@@ -55,7 +55,7 @@ def create_model():
     input_layer = keras.layers.InputLayer(input_shape = (300, 300, 1))
     cnn_model.add(input_layer)
 
-    conv_1 = keras.layers.Conv2D(filters = 16, kernel_size = 3)
+    conv_1 = keras.layers.Conv2D(filters = 16, kernel_size = 3, padding ='same')
     batchNorm_1 = keras.layers.BatchNormalization()
     ReLU_1 = keras.layers.ReLU()
     pool_1 = keras.layers.MaxPooling2D((2, 2))
@@ -64,9 +64,9 @@ def create_model():
     cnn_model.add(batchNorm_1)
     cnn_model.add(ReLU_1)
     cnn_model.add(dropout_1)
-    cnn_model.ass(pool_1)
+    cnn_model.add(pool_1)
 
-    conv_2 = keras.layers.Conv2D(filters = 32, kernel_size = 3)
+    conv_2 = keras.layers.Conv2D(filters = 32, kernel_size = 3, padding = "same")
     batchNorm_2 = keras.layers.BatchNormalization()
     ReLU_2 = keras.layers.ReLU()
     pool_2 = keras.layers.MaxPooling2D((2, 2))
@@ -75,26 +75,33 @@ def create_model():
     cnn_model.add(conv_2)
     cnn_model.add(batchNorm_2)
     cnn_model.add(ReLU_2)
+    cnn_model.add(dropout_2)
     cnn_model.add(pool_2)
 
-    conv_3 = keras.layers.Conv2D(filters = 64, kernel_size = 3)
+    conv_3 = keras.layers.Conv2D(filters = 64, kernel_size = 3, padding = 'same')
     batchNorm_3 = keras.layers.BatchNormalization()
     ReLU_3 = keras.layers.ReLU()
-    pool_3 = keras.layers.MaxPooling2d((2,2))
+    pool_3 = keras.layers.MaxPooling2D((2,2))
     dropout_3 = keras.layers.Dropout(0.25)
 
     cnn_model.add(conv_3)
     cnn_model.add(batchNorm_3)
     cnn_model.add(ReLU_3)
+    cnn_model.add(dropout_3)
+    cnn_model.add(pool_3)
 
 
 
-    conv_4 = keras.layers.Conv2D(filters = 12, kernel_size = 3)
+    conv_4 = keras.layers.Conv2D(filters = 128, kernel_size = 3, padding = 'same')
     batchNorm_4 = keras.layers.BatchNormalization()
     ReLU_4 = keras.layers.ReLU()
+    pool_4 = keras.layers.MaxPooling2D((2,2))
+    dropout_4 = keras.layers.Dropout(0.25)
     cnn_model.add(conv_4)
     cnn_model.add(batchNorm_4)
     cnn_model.add(ReLU_4)
+    cnn_model.add(pool_4)
+    cnn_model.add(dropout_4)
 
 
     pooling_layer = keras.layers.GlobalAveragePooling2D()
@@ -106,13 +113,13 @@ def create_model():
     cnn_model.add(output_layer)
     cnn_model.summary()
 
-    sgd_optimizer = keras.optimizers.SGD(learning_rate = 0.1)
+    sgd_optimizer = keras.optimizers.SGD(learning_rate = 0.01)
     loss_fn = keras.losses.CategoricalCrossentropy()
     cnn_model.compile(optimizer = sgd_optimizer, loss = loss_fn, metrics = ['accuracy'])
 
     num_epochs = 20
     t0 = time.time()
-    history = cnn_model.fit(X_train, y_train, epochs = num_epochs, validation_split = 0.1)
+    history = cnn_model.fit(X_train, y_train, epochs = num_epochs, validation_split = 0.2)
     t1 = time.time()
     
     return cnn_model, history
