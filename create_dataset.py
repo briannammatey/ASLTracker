@@ -58,26 +58,36 @@ def create_model():
     conv_1 = keras.layers.Conv2D(filters = 16, kernel_size = 3)
     batchNorm_1 = keras.layers.BatchNormalization()
     ReLU_1 = keras.layers.ReLU()
+    pool_1 = keras.layers.MaxPooling2D((2, 2))
+    dropout_1 = keras.layers.Dropout(0.25)
     cnn_model.add(conv_1)
     cnn_model.add(batchNorm_1)
     cnn_model.add(ReLU_1)
+    cnn_model.add(dropout_1)
+    cnn_model.ass(pool_1)
 
     conv_2 = keras.layers.Conv2D(filters = 32, kernel_size = 3)
     batchNorm_2 = keras.layers.BatchNormalization()
     ReLU_2 = keras.layers.ReLU()
+    pool_2 = keras.layers.MaxPooling2D((2, 2))
+    dropout_2 = keras.layers.Dropout(0.25)
+
     cnn_model.add(conv_2)
     cnn_model.add(batchNorm_2)
     cnn_model.add(ReLU_2)
+    cnn_model.add(pool_2)
 
     conv_3 = keras.layers.Conv2D(filters = 64, kernel_size = 3)
     batchNorm_3 = keras.layers.BatchNormalization()
     ReLU_3 = keras.layers.ReLU()
+    pool_3 = keras.layers.MaxPooling2d((2,2))
+    dropout_3 = keras.layers.Dropout(0.25)
+
     cnn_model.add(conv_3)
     cnn_model.add(batchNorm_3)
     cnn_model.add(ReLU_3)
 
 
-# 6. Create the fourth convolutional layer and add it to the model object:
 
     conv_4 = keras.layers.Conv2D(filters = 12, kernel_size = 3)
     batchNorm_4 = keras.layers.BatchNormalization()
@@ -86,13 +96,11 @@ def create_model():
     cnn_model.add(batchNorm_4)
     cnn_model.add(ReLU_4)
 
-# 7. Create the pooling layer and add it to the model object:
-# YOUR CODE HERE
+
     pooling_layer = keras.layers.GlobalAveragePooling2D()
     cnn_model.add(pooling_layer)
 
 
-# 8. Create the output layer and add it to the model object:
 
     output_layer = keras.layers.Dense(units=26, activation = 'softmax')
     cnn_model.add(output_layer)
