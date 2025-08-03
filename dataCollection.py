@@ -8,7 +8,7 @@ from tensorflow.keras.models import load_model
 class_labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
                 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
-model = load_model("models/asl_model3.h5")
+model = load_model("models/asl_model4.h5")
 
 # accesses web cam
 cap = cv2.VideoCapture(0)
