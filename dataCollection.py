@@ -92,7 +92,7 @@ while True:
         imgNormalized = imgGray / 255.0
 
         imgInput = imgNormalized.reshape(1, imgSize, imgSize, 1)
-
+    """
         # Predict class probabilities
         prediction = model.predict(imgInput)
 
@@ -109,7 +109,7 @@ while True:
         # Display prediction on original image
         cv2.putText(img, f'Prediction: {predicted_sign}', (10, 70), cv2.FONT_HERSHEY_SIMPLEX,
                     2, (0, 255, 0), 3, cv2.LINE_AA)
-     
+     """
     cv2.imshow("Image", img)
     key = cv2.waitKey(10)
     if key & 0xFF == ord('q'):
