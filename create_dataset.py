@@ -1,11 +1,12 @@
 import os
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2" # suppress info and warning messages
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2" #
 import cv2
 import numpy as np
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras import layers, models
 import tensorflow.keras as keras
+from tensorflow.keras import regularizers
 
 import time
 import matplotlib.pyplot as plt
@@ -27,7 +28,7 @@ for label in os.listdir(base_path):
         img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)  
         if img is None:
             continue
-        img = cv2.resize(img, (300, 300))  #
+        img = cv2.resize(img, (64, 64))  #
         images.append(img)
         # 123
         labels.append(ord(label.upper()) - ord('A')) 
@@ -57,14 +58,14 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 def create_model():
     cnn_model = keras.Sequential()
-    input_layer = keras.layers.InputLayer(input_shape = (300, 300, 1))
+    input_layer = keras.layers.InputLayer(input_shape = (64, 64, 1))
     cnn_model.add(input_layer)
 
-    conv_1 = keras.layers.Conv2D(filters = 8, kernel_size = 3, padding ='same')
+    conv_1 = keras.layers.Conv2D(filters = 8, kernel_size = (3,3), padding ='same', kernel_regularizer = regularizers.l2(0.001))
     batchNorm_1 = keras.layers.BatchNormalization()
     ReLU_1 = keras.layers.ReLU()
     pool_1 = keras.layers.MaxPooling2D((2, 2))
-    dropout_1 = keras.layers.Dropout(0.4)
+    dropout_1 = keras.layers.Dropout(0.25)
     cnn_model.add(conv_1)
     cnn_model.add(batchNorm_1)
     cnn_model.add(ReLU_1)
@@ -96,19 +97,6 @@ def create_model():
     cnn_model.add(pool_3)
 
 
-
-    conv_4 = keras.layers.Conv2D(filters = 64, kernel_size = 3, padding = 'same')
-    batchNorm_4 = keras.layers.BatchNormalization()
-    ReLU_4 = keras.layers.ReLU()
-    pool_4 = keras.layers.MaxPooling2D((2,2))
-    dropout_4 = keras.layers.Dropout(0.6)
-    cnn_model.add(conv_4)
-    cnn_model.add(batchNorm_4)
-    cnn_model.add(ReLU_4)
-    cnn_model.add(pool_4)
-    cnn_model.add(dropout_4)
-
-
     pooling_layer = keras.layers.GlobalAveragePooling2D()
     cnn_model.add(pooling_layer)
 
@@ -138,12 +126,39 @@ def create_model():
     
     return cnn_model, history
 
+"""
+Good sign:
+Training and validation accuracy go up together and level off.
+Training and validation loss go down together and level off.
 
-model, histoy = create_model()
+Overfitting sign:
+Training accuracy keeps going up, but validation accuracy stops improving or drops.
+Training loss keeps going down, but validation loss goes back up.
+"""
+
+model, history = create_model()
 test_loss, test_acc = model.evaluate(X_test, y_test)
 
-print("test accuracy", test_acc)
+# Accuracy
+
+plt.plot(history.history['accuracy'], label = 'Train Accuracy')
+plt.plot(history.history['val_accuracy'], label = 'Validation Accuracy')
+plt.title('Model Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
+
+# loss
+
+plt.plot(history.history['loss'], label = 'Train Loss')
+plt.plot(history.history['val_loss'], label = 'Validation Loss')
+plt.title('Model Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
 
 
-model.save("models/asl_model6.keras")
+#model.save("models/asl_model6.keras")
 
