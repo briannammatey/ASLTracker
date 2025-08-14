@@ -1,5 +1,5 @@
 import os
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2" #
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import cv2
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -7,158 +7,301 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras import layers, models
 import tensorflow.keras as keras
 from tensorflow.keras import regularizers
-
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import time
 import matplotlib.pyplot as plt
-import math
-
 
 base_path = "img"
 
 images = []
 labels = []
 
-#goes through the cata
+# Load data with debugging
+print("Loading data...")
+class_counts = {}
 for label in os.listdir(base_path):
     folder_path = os.path.join(base_path, label)
     if not os.path.isdir(folder_path):  
         continue
+    
+    count = 0
     for img_file in os.listdir(folder_path):  
         img_path = os.path.join(folder_path, img_file)
         img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)  
         if img is None:
             continue
-        img = cv2.resize(img, (64, 64))  #
+        img = cv2.resize(img, (64, 64))
         images.append(img)
-        # 123
-        labels.append(ord(label.upper()) - ord('A')) 
+        labels.append(ord(label.upper()) - ord('A'))
+        count += 1
+    
+    class_counts[label.upper()] = count
+    print(f"Class {label.upper()}: {count} images")
 
 # Convert to NumPy arrays
 X = np.array(images, dtype=np.float32)
 y = np.array(labels)
+
+print(f"\nDataset Summary:")
 print(f"Total images loaded: {len(images)}")
 print(f"Image shape: {X[0].shape}")
 print(f"Number of unique labels: {len(set(labels))}")
+print(f"Label distribution: {dict(zip(*np.unique(y, return_counts=True)))}")
 
 
+min_samples = min(class_counts.values())
+max_samples = max(class_counts.values())
+if max_samples / min_samples > 2:
+    print(" Significant class imbalance detected!")
+    print("Consider balancing your dataset or using class weights")
 
 # Normalize pixel values to [0, 1]
 X /= 255.0
 
-# Add channel dimension: (num_samples, 64, 64, 1)
+# Add channel dimension
 X = X[..., np.newaxis]
 
-# One-hot encode the labels: (num_samples, 26)
-y = to_categorical(y, num_classes=4)  # 
+# One-hot encode the labels
+y = to_categorical(y, num_classes=4)
 
-# Split the dataset
+# Split the dataset with stratification
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=1234
+    X, y, test_size=0.2, random_state=1234, stratify=y.argmax(axis=1)
 )
 
-def create_model():
-    cnn_model = keras.Sequential()
-    input_layer = keras.layers.InputLayer(input_shape = (64, 64, 1))
-    cnn_model.add(input_layer)
+print(f"\nSplit sizes:")
+print(f"Training: {X_train.shape[0]} samples")
+print(f"Testing: {X_test.shape[0]} samples")
 
-    conv_1 = keras.layers.Conv2D(filters = 8, kernel_size = (3,3), padding ='same', kernel_regularizer = regularizers.l2(0.001))
-    batchNorm_1 = keras.layers.BatchNormalization()
-    ReLU_1 = keras.layers.ReLU()
-    pool_1 = keras.layers.MaxPooling2D((2, 2))
-    dropout_1 = keras.layers.Dropout(0.25)
-    cnn_model.add(conv_1)
-    cnn_model.add(batchNorm_1)
-    cnn_model.add(ReLU_1)
-    cnn_model.add(dropout_1)
-    cnn_model.add(pool_1)
+def create_simple_model():
+    """Much simpler model to reduce overfitting"""
+    model = keras.Sequential([
+        keras.layers.InputLayer(input_shape=(64, 64, 1)),
+        
+        # First block - very simple
+        keras.layers.Conv2D(16, (5, 5), padding='same'),  
+        keras.layers.BatchNormalization(),
+        keras.layers.ReLU(),
+        keras.layers.MaxPooling2D((4, 4)),  
+        keras.layers.Dropout(0.3),
+        
+     
+        keras.layers.Conv2D(32, (3, 3), padding='same'),
+        keras.layers.BatchNormalization(),
+        keras.layers.ReLU(),
+        keras.layers.MaxPooling2D((4, 4)),  
+        keras.layers.Dropout(0.4),
+        
+       
+        keras.layers.GlobalAveragePooling2D(),
+        keras.layers.Dropout(0.5),
+        
+        # Output layer
+        keras.layers.Dense(4, activation='softmax')
+    ])
+    
+    model.summary()
+    return model
 
-    conv_2 = keras.layers.Conv2D(filters = 16, kernel_size = 3, padding = "same")
-    batchNorm_2 = keras.layers.BatchNormalization()
-    ReLU_2 = keras.layers.ReLU()
-    pool_2 = keras.layers.MaxPooling2D((2, 2))
-    dropout_2 = keras.layers.Dropout(0.4)
+def create_baseline_model():
+    """Even simpler baseline model"""
+    model = keras.Sequential([
+        keras.layers.InputLayer(input_shape=(64, 64, 1)),
+        
+        # Single conv layer
+        keras.layers.Conv2D(32, (7, 7), padding='same'),
+        keras.layers.BatchNormalization(),
+        keras.layers.ReLU(),
+        keras.layers.MaxPooling2D((8, 8)),  # Very aggressive pooling
+        keras.layers.Dropout(0.5),
+        
+        keras.layers.GlobalAveragePooling2D(),
+        keras.layers.Dense(4, activation='softmax')
+    ])
+    
+    print("Baseline model:")
+    model.summary()
+    return model
 
-    cnn_model.add(conv_2)
-    cnn_model.add(batchNorm_2)
-    cnn_model.add(ReLU_2)
-    cnn_model.add(dropout_2)
-    cnn_model.add(pool_2)
-
-    conv_3 = keras.layers.Conv2D(filters = 32, kernel_size = 3, padding = 'same')
-    batchNorm_3 = keras.layers.BatchNormalization()
-    ReLU_3 = keras.layers.ReLU()
-    pool_3 = keras.layers.MaxPooling2D((2,2))
-    dropout_3 = keras.layers.Dropout(0.5)
-
-    cnn_model.add(conv_3)
-    cnn_model.add(batchNorm_3)
-    cnn_model.add(ReLU_3)
-    cnn_model.add(dropout_3)
-    cnn_model.add(pool_3)
-
-
-    pooling_layer = keras.layers.GlobalAveragePooling2D()
-    cnn_model.add(pooling_layer)
-
-
-
-    output_layer = keras.layers.Dense(units=4, activation = 'softmax')
-    cnn_model.add(output_layer)
-    cnn_model.summary()
-
-    adam_optimizer = keras.optimizers.Adam(learning_rate = 0.001)
-    loss_fn = keras.losses.CategoricalCrossentropy()
-    cnn_model.compile(optimizer = adam_optimizer, loss = loss_fn, metrics = ['accuracy'])
-
-    num_epochs = 20
+def train_with_heavy_regularization():
+    # Try the simple model first
+    model = create_simple_model()
+    
+    # Much more aggressive data augmentation
+    datagen = ImageDataGenerator(
+        rotation_range=30,
+        width_shift_range=0.2,
+        height_shift_range=0.2,
+        zoom_range=0.2,
+        shear_range=0.2,
+        horizontal_flip=False,
+        vertical_flip=False,
+        fill_mode='nearest'
+    )
+    
+    # Split training data
+    X_train_final, X_val, y_train_final, y_val = train_test_split(
+        X_train, y_train, test_size=0.25, random_state=1234, 
+        stratify=y_train.argmax(axis=1)
+    )
+    
+    print(f"Final split sizes:")
+    print(f"Training: {X_train_final.shape[0]}")
+    print(f"Validation: {X_val.shape[0]}")
+    
+    # Calculate class weights to handle imbalance
+    from sklearn.utils.class_weight import compute_class_weight
+    class_weights = compute_class_weight(
+        'balanced',
+        classes=np.unique(y_train_final.argmax(axis=1)),
+        y=y_train_final.argmax(axis=1)
+    )
+    class_weight_dict = dict(enumerate(class_weights))
+    print(f"Class weights: {class_weight_dict}")
+    
+    # Compile with lower learning rate
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=0.0005),  # Lower LR
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    # More conservative callbacks
+    callbacks = [
+        keras.callbacks.EarlyStopping(
+            monitor='val_loss',
+            patience=15,  # Much more patience
+            restore_best_weights=True,
+            verbose=1
+        ),
+        keras.callbacks.ReduceLROnPlateau(
+            monitor='val_loss',
+            factor=0.8,
+            patience=8,
+            min_lr=1e-7,
+            verbose=1
+        )
+    ]
+    
+    print("\nStarting training...")
     t0 = time.time()
-
-    early_stopping = keras.callbacks.EarlyStopping(monitor = 'val_loss', patience = 5, restore_best_weights = True, verbose = 1)
-    lr_scheduler = keras.callbacks.ReduceLROnPlateau(
-        monitor='val_loss',
-        factor=0.5,
-        patience=3,
-        min_lr=1e-7,
+    
+    # Train with heavy augmentation and class weights
+    history = model.fit(
+        datagen.flow(X_train_final, y_train_final, batch_size=16),  # Smaller batch size
+        epochs=50,
+        validation_data=(X_val, y_val),
+        callbacks=callbacks,
+        class_weight=class_weight_dict,  # Handle class imbalance
         verbose=1
     )
-    history = cnn_model.fit(X_train, y_train, epochs = num_epochs, validation_split = 0.2, callbacks = [early_stopping, lr_scheduler])
-    t1 = time.time()
     
-    return cnn_model, history
+    t1 = time.time()
+    print(f"Training completed in {t1-t0:.2f} seconds")
+    
+    return model, history
 
-"""
-Good sign:
-Training and validation accuracy go up together and level off.
-Training and validation loss go down together and level off.
+def train_baseline():
+    """Train ultra-simple baseline"""
+    print("\n" + "="*50)
+    print("TRAINING BASELINE MODEL")
+    print("="*50)
+    
+    model = create_baseline_model()
+    
+    # Split with more data for validation
+    X_train_final, X_val, y_train_final, y_val = train_test_split(
+        X_train, y_train, test_size=0.3, random_state=1234,
+        stratify=y_train.argmax(axis=1)
+    )
+    
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=0.01),  # Higher LR for simple model
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    # No augmentation for baseline
+    history = model.fit(
+        X_train_final, y_train_final,
+        epochs=20,
+        validation_data=(X_val, y_val),
+        batch_size=32,
+        verbose=1
+    )
+    
+    return model, history
 
-Overfitting sign:
-Training accuracy keeps going up, but validation accuracy stops improving or drops.
-Training loss keeps going down, but validation loss goes back up.
-"""
+# First, try the baseline model
+print("Testing baseline model first...")
+baseline_model, baseline_history = train_baseline()
 
-model, history = create_model()
-test_loss, test_acc = model.evaluate(X_test, y_test)
+# Evaluate baseline
+baseline_test_loss, baseline_test_acc = baseline_model.evaluate(X_test, y_test, verbose=0)
+print(f"\nBaseline Results:")
+print(f"Test accuracy: {baseline_test_acc:.4f}")
+print(f"Test loss: {baseline_test_loss:.4f}")
 
-# Accuracy
+# If baseline works reasonably, try the more complex model
+if baseline_test_acc > 0.3:  # 
+    print("\nBaseline works! ")
+    model, history = train_with_heavy_regularization()
+    test_loss, test_acc = model.evaluate(X_test, y_test, verbose=0)
+    
+    print(f"\nComplex Model Results:")
+    print(f"Test accuracy: {test_acc:.4f}")
+    print(f"Test loss: {test_loss:.4f}")
+    
+    # Plot comparison
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+    
+    # Baseline plots
+    axes[0,0].plot(baseline_history.history['accuracy'], label='Train')
+    axes[0,0].plot(baseline_history.history['val_accuracy'], label='Val')
+    axes[0,0].set_title('Baseline Accuracy')
+    axes[0,0].legend()
+    axes[0,0].grid(True, alpha=0.3)
+    
+    axes[0,1].plot(baseline_history.history['loss'], label='Train')
+    axes[0,1].plot(baseline_history.history['val_loss'], label='Val')
+    axes[0,1].set_title('Baseline Loss')
+    axes[0,1].legend()
+    axes[0,1].grid(True, alpha=0.3)
+    
+    # Complex model plots
+    axes[1,0].plot(history.history['accuracy'], label='Train')
+    axes[1,0].plot(history.history['val_accuracy'], label='Val')
+    axes[1,0].set_title('Complex Model Accuracy')
+    axes[1,0].legend()
+    axes[1,0].grid(True, alpha=0.3)
+    
+    axes[1,1].plot(history.history['loss'], label='Train')
+    axes[1,1].plot(history.history['val_loss'], label='Val')
+    axes[1,1].set_title('Complex Model Loss')
+    axes[1,1].legend()
+    axes[1,1].grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
+    
+else:
+    print(f"\n⚠️ BASELINE FAILED (acc={baseline_test_acc:.3f})")
+    print("This suggests a fundamental data problem:")
+    print("1. Check if your images are correctly labeled")
+    print("2. Verify the classes are actually distinguishable")
+    print("3. Make sure your folder structure is correct")
+    print("4. Consider if you need more diverse training data")
+    
+    # Show some sample predictions to debug
+    predictions = baseline_model.predict(X_test[:10], verbose=0)
+    print("\nSample predictions vs actual:")
+    for i in range(min(10, len(X_test))):
+        pred_class = predictions[i].argmax()
+        actual_class = y_test[i].argmax()
+        confidence = predictions[i].max()
+        print(f"Image {i}: Predicted={pred_class} (conf={confidence:.3f}), Actual={actual_class}")
 
-plt.plot(history.history['accuracy'], label = 'Train Accuracy')
-plt.plot(history.history['val_accuracy'], label = 'Validation Accuracy')
-plt.title('Model Accuracy')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy')
-plt.legend()
-plt.show()
-
-# loss
-
-plt.plot(history.history['loss'], label = 'Train Loss')
-plt.plot(history.history['val_loss'], label = 'Validation Loss')
-plt.title('Model Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.legend()
-plt.show()
-
-
-#model.save("models/asl_model6.keras")
-
+print("\n" + "="*50)
+print("DEBUGGING COMPLETE")
+print("="*50)
+model.save("models/asl_model7.keras")

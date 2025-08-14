@@ -8,7 +8,7 @@ from tensorflow.keras.models import load_model
 class_labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
                 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
-model = load_model("models/asl_model4.h5")
+model = load_model("models/asl_model7.keras")
 
 # accesses web cam
 cap = cv2.VideoCapture(0)
@@ -92,7 +92,7 @@ while True:
         imgNormalized = imgGray / 255.0
 
         imgInput = imgNormalized.reshape(1, imgSize, imgSize, 1)
-    """
+    
         # Predict class probabilities
         prediction = model.predict(imgInput)
 
@@ -109,7 +109,7 @@ while True:
         # Display prediction on original image
         cv2.putText(img, f'Prediction: {predicted_sign}', (10, 70), cv2.FONT_HERSHEY_SIMPLEX,
                     2, (0, 255, 0), 3, cv2.LINE_AA)
-     """
+     
     cv2.imshow("Image", img)
     key = cv2.waitKey(10)
     if key & 0xFF == ord('q'):
