@@ -1,9 +1,9 @@
-# ASLTracker
+# American Sign Language Tracker :)
 
-# My inspiration
+## My inspiration
 
 My inspiration comes from my love of my American Sign Language class! I took 4 semesters of ASL and I loved it, and I am interested in ML. So I thought to combine the two ! This is currently in development, but it is a long project as I am learning as I go!. Pictures will be includeed soon ❤️
-# 🧠 ASL Hand Tracker (In Progress)
+## 🧠 ASL Hand Tracker (In Progress)
 
 This project is a real-time American Sign Language (ASL) hand tracking application that uses **computer vision** and **deep learning** to detect, track, and classify hand gestures from live video input.
 
