@@ -42,7 +42,8 @@ The goal of this project is to build an accessible tool that leverages **OpenCV*
 - Hand tracking using MediaPipe is functional  
 - Dataset is being cleaned and preprocessed for model training  
 - CNN architecture is being built and tested  
-- UI development is in early stages  
+- UI development is in early stages
+- Model FINALLY is not overfitting (woohoo)
 
 ---
 ## To Do 
