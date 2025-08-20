@@ -16,7 +16,7 @@ base_path = "img"
 images = []
 labels = []
 
-# Load data with debugging
+
 print("Loading data...")
 class_counts = {}
 for label in os.listdir(base_path):
@@ -38,7 +38,7 @@ for label in os.listdir(base_path):
     class_counts[label.upper()] = count
     print(f"Class {label.upper()}: {count} images")
 
-# Convert to NumPy arrays
+
 X = np.array(images, dtype=np.float32)
 y = np.array(labels)
 
@@ -55,16 +55,15 @@ if max_samples / min_samples > 2:
     print(" Significant class imbalance detected!")
     print("Consider balancing your dataset or using class weights")
 
-# Normalize pixel values to [0, 1]
+
 X /= 255.0
 
-# Add channel dimension
+
 X = X[..., np.newaxis]
 
-# One-hot encode the labels
+
 y = to_categorical(y, num_classes=4)
 
-# Split the dataset with stratification
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=1234, stratify=y.argmax(axis=1)
 )
@@ -78,7 +77,7 @@ def create_simple_model():
     model = keras.Sequential([
         keras.layers.InputLayer(input_shape=(64, 64, 1)),
         
-        # First block - very simple
+       
         keras.layers.Conv2D(16, (5, 5), padding='same'),  
         keras.layers.BatchNormalization(),
         keras.layers.ReLU(),
@@ -96,7 +95,7 @@ def create_simple_model():
         keras.layers.GlobalAveragePooling2D(),
         keras.layers.Dropout(0.5),
         
-        # Output layer
+       
         keras.layers.Dense(4, activation='softmax')
     ])
     
@@ -108,11 +107,11 @@ def create_baseline_model():
     model = keras.Sequential([
         keras.layers.InputLayer(input_shape=(64, 64, 1)),
         
-        # Single conv layer
+       
         keras.layers.Conv2D(32, (7, 7), padding='same'),
         keras.layers.BatchNormalization(),
         keras.layers.ReLU(),
-        keras.layers.MaxPooling2D((8, 8)),  # Very aggressive pooling
+        keras.layers.MaxPooling2D((8, 8)),  
         keras.layers.Dropout(0.5),
         
         keras.layers.GlobalAveragePooling2D(),
@@ -124,10 +123,10 @@ def create_baseline_model():
     return model
 
 def train_with_heavy_regularization():
-    # Try the simple model first
+    
     model = create_simple_model()
     
-    # Much more aggressive data augmentation
+    
     datagen = ImageDataGenerator(
         rotation_range=30,
         width_shift_range=0.2,
@@ -139,7 +138,7 @@ def train_with_heavy_regularization():
         fill_mode='nearest'
     )
     
-    # Split training data
+    
     X_train_final, X_val, y_train_final, y_val = train_test_split(
         X_train, y_train, test_size=0.25, random_state=1234, 
         stratify=y_train.argmax(axis=1)
@@ -149,7 +148,7 @@ def train_with_heavy_regularization():
     print(f"Training: {X_train_final.shape[0]}")
     print(f"Validation: {X_val.shape[0]}")
     
-    # Calculate class weights to handle imbalance
+    
     from sklearn.utils.class_weight import compute_class_weight
     class_weights = compute_class_weight(
         'balanced',
@@ -159,18 +158,17 @@ def train_with_heavy_regularization():
     class_weight_dict = dict(enumerate(class_weights))
     print(f"Class weights: {class_weight_dict}")
     
-    # Compile with lower learning rate
     model.compile(
-        optimizer=keras.optimizers.Adam(learning_rate=0.0005),  # Lower LR
+        optimizer=keras.optimizers.Adam(learning_rate=0.0005), 
         loss='categorical_crossentropy',
         metrics=['accuracy']
     )
     
-    # More conservative callbacks
+    
     callbacks = [
         keras.callbacks.EarlyStopping(
             monitor='val_loss',
-            patience=15,  # Much more patience
+            patience=15,  
             restore_best_weights=True,
             verbose=1
         ),
@@ -186,13 +184,13 @@ def train_with_heavy_regularization():
     print("\nStarting training...")
     t0 = time.time()
     
-    # Train with heavy augmentation and class weights
+    
     history = model.fit(
-        datagen.flow(X_train_final, y_train_final, batch_size=16),  # Smaller batch size
+        datagen.flow(X_train_final, y_train_final, batch_size=16),  
         epochs=50,
         validation_data=(X_val, y_val),
         callbacks=callbacks,
-        class_weight=class_weight_dict,  # Handle class imbalance
+        class_weight=class_weight_dict,  
         verbose=1
     )
     
@@ -209,19 +207,19 @@ def train_baseline():
     
     model = create_baseline_model()
     
-    # Split with more data for validation
+    
     X_train_final, X_val, y_train_final, y_val = train_test_split(
         X_train, y_train, test_size=0.3, random_state=1234,
         stratify=y_train.argmax(axis=1)
     )
     
     model.compile(
-        optimizer=keras.optimizers.Adam(learning_rate=0.01),  # Higher LR for simple model
+        optimizer=keras.optimizers.Adam(learning_rate=0.01),  
         loss='categorical_crossentropy',
         metrics=['accuracy']
     )
     
-    # No augmentation for baseline
+    
     history = model.fit(
         X_train_final, y_train_final,
         epochs=20,
@@ -232,18 +230,15 @@ def train_baseline():
     
     return model, history
 
-# First, try the baseline model
 print("Testing baseline model first...")
 baseline_model, baseline_history = train_baseline()
 
-# Evaluate baseline
 baseline_test_loss, baseline_test_acc = baseline_model.evaluate(X_test, y_test, verbose=0)
 print(f"\nBaseline Results:")
 print(f"Test accuracy: {baseline_test_acc:.4f}")
 print(f"Test loss: {baseline_test_loss:.4f}")
 
-# If baseline works reasonably, try the more complex model
-if baseline_test_acc > 0.3:  # 
+if baseline_test_acc > 0.3: 
     print("\nBaseline works! ")
     model, history = train_with_heavy_regularization()
     test_loss, test_acc = model.evaluate(X_test, y_test, verbose=0)
@@ -252,10 +247,8 @@ if baseline_test_acc > 0.3:  #
     print(f"Test accuracy: {test_acc:.4f}")
     print(f"Test loss: {test_loss:.4f}")
     
-    # Plot comparison
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
     
-    # Baseline plots
     axes[0,0].plot(baseline_history.history['accuracy'], label='Train')
     axes[0,0].plot(baseline_history.history['val_accuracy'], label='Val')
     axes[0,0].set_title('Baseline Accuracy')
@@ -268,7 +261,6 @@ if baseline_test_acc > 0.3:  #
     axes[0,1].legend()
     axes[0,1].grid(True, alpha=0.3)
     
-    # Complex model plots
     axes[1,0].plot(history.history['accuracy'], label='Train')
     axes[1,0].plot(history.history['val_accuracy'], label='Val')
     axes[1,0].set_title('Complex Model Accuracy')
@@ -292,7 +284,6 @@ else:
     print("3. Make sure your folder structure is correct")
     print("4. Consider if you need more diverse training data")
     
-    # Show some sample predictions to debug
     predictions = baseline_model.predict(X_test[:10], verbose=0)
     print("\nSample predictions vs actual:")
     for i in range(min(10, len(X_test))):
